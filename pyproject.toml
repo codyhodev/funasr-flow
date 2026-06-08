@@ -1,0 +1,29 @@
+[project]
+name = "funasr-flow"
+version = "0.1.0"
+description = "基于 FunASR 的 Linux 桌面语音输入工具"
+requires-python = ">=3.10"
+dependencies = [
+    "funasr>=1.0.0",
+    "sounddevice>=0.4.0",
+    "evdev-binary>=1.3.0; sys_platform == 'linux'",
+    "pynput>=1.7.0",
+    "numpy>=1.24.0",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "PyQt5>=5.15.0",
+    "Pillow>=10.0.0",
+]
+
+[project.scripts]
+funasr-flow = "funasr_flow.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/funasr_flow"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

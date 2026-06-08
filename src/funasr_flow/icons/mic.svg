@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- 阴影层: 30% 不透明黑色，向下偏移 1px -->
+  <g transform="translate(0,1)" opacity=".3" fill="#000">
+    <rect x="8" y="2" width="8" height="9" rx="4"/>
+    <rect x="10" y="11" width="4" height="3" rx="1"/>
+    <rect x="11" y="14" width="2" height="5" rx="1"/>
+    <rect x="3" y="19" width="18" height="2.5" rx="1.2"/>
+  </g>
+  <!-- 主体层: 亮灰填充 -->
+  <g id="fill-layer">
+    <rect x="8" y="2" width="8" height="9" rx="4"/>
+    <rect x="10" y="11" width="4" height="3" rx="1"/>
+    <rect x="11" y="14" width="2" height="5" rx="1"/>
+    <rect x="3" y="19" width="18" height="2.5" rx="1.2"/>
+  </g>
+</svg>
