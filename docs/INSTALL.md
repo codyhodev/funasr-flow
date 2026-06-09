@@ -104,6 +104,40 @@ funasr-flow daemon
 
 桌面环境（GNOME、KDE、XFCE 等）会在下次登录时自动启动守护进程。
 
+## 配置文件
+
+配置文件位于 `~/.config/funasr-flow/config.yaml`，首次启动自动生成。格式：
+
+```yaml
+# FunASR Flow 配置文件
+hotkey: "<ctrl_r>"       # 全局热键，pynput 格式
+
+transcriber:
+  device: "cpu"          # cpu | cuda | cuda:0 | mps | npu:0
+```
+
+### 修改热键
+
+```yaml
+hotkey: "<ctrl_l>"       # 改用左 Ctrl
+hotkey: "<ctrl>+<alt>+r" # 使用组合键
+```
+
+支持 pynput 格式的单键和组合键。
+
+### 启用 CUDA 加速
+
+```yaml
+transcriber:
+  device: "cuda"
+```
+
+- 需要安装 CUDA 版 PyTorch：`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121`
+- 如果 CUDA 不可用，FunASR 会自动回退到 CPU，不会崩溃
+- 多 GPU 环境可指定设备：`device: "cuda:0"` / `device: "cuda:1"`
+
+修改配置后需重启守护进程生效。
+
 ### 重新登录或手动启动
 
 安装后不会自动启动当前进程。可以：
@@ -132,6 +166,7 @@ funasr-flow uninstall
 - **不杀死进程：** uninstall 只移除 desktop 自启文件。如果有正在运行的实例，需要手动终止或从托盘菜单退出。
 - **不删除模型：** 模型缓存在 `~/.cache/funasr-flow/models/` 保留。如需彻底清理，手动删除该目录。
 - **不删除临时文件：** 运行时录音临时文件在 `/tmp/funasr-flow/`，可手动清理。
+- **不删除配置文件：** 配置文件在 `~/.config/funasr-flow/config.yaml` 保留。
 
 ### 彻底清理
 
@@ -141,6 +176,9 @@ funasr-flow uninstall
 
 # 删除模型缓存（约 300MB）
 rm -rf ~/.cache/funasr-flow/
+
+# 删除配置文件
+rm -rf ~/.config/funasr-flow/
 
 # 删除临时录音文件
 rm -rf /tmp/funasr-flow/
@@ -162,6 +200,8 @@ rm -rf /path/to/funasr-flow
     ▼
 执行 funasr-flow daemon
     │
+    ├─ 获取进程锁 (lock.acquire)，已有实例则退出
+    ├─ 加载配置文件 (~/.config/funasr-flow/config.yaml)
     ├─ 创建 QApplication
     ├─ 初始化 HotkeyListener + Recorder + Transcriber + Injector
     ├─ 创建系统托盘图标

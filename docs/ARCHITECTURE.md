@@ -5,6 +5,8 @@
 ```
 src/funasr_flow/
 ├── cli.py          # 命令行入口 (install / uninstall / daemon)
+├── config.py       # 配置文件管理 (YAML → Config 数据类)
+├── lock.py         # 单实例进程锁 (PID 文件)
 ├── hotkey.py       # 全局热键监听器 (pynput)
 ├── loop.py         # 核心回路：热键→录音→识别→注入 状态机
 ├── state.py        # 状态枚举 (IDLE / RECORDING / TRANSCRIBING)
@@ -89,7 +91,7 @@ RECORDING  → TRANSCRIBING
 - listener 线程设为 `daemon=True`，进程退出时自动清理，无需 join
 - `stop()` 仅清空引用，不阻塞
 
-**当前热键配置：** `HOTKEY_SPEC = "<ctrl_r>"`（仅右 Ctrl）
+**热键配置：** 通过 `~/.config/funasr-flow/config.yaml` 中的 `hotkey` 字段配置，默认为 `<ctrl_r>`。支持 pynput 格式的单键和组合键（如 `<ctrl>+<alt>+r`）。
 
 ### 2. VoiceInputLoop (`loop.py`)
 
@@ -109,7 +111,7 @@ VoiceInputLoop(
 )
 ```
 
-**工厂函数** `make_voice_input_loop()` 创建完整的生产环境实例。
+**工厂函数** `make_voice_input_loop()` 创建完整的生产环境实例，接受 `hotkey_spec` 和 `device` 参数（从配置文件读取）。`grab_key()` 在构造时完成，`start()` 只负责启动监听。
 
 **启用/禁用：** `disable()` 会立即停止正在进行的录音并清理状态。
 
@@ -128,6 +130,7 @@ VoiceInputLoop(
 
 - **模型：** `iic/SenseVoiceSmall`，通过 ModelScope 下载
 - **缓存目录：** `~/.cache/funasr-flow/models/`
+- **推理设备：** 通过配置文件 `transcriber.device` 指定（`cpu` / `cuda` / `cuda:0` / `mps` / `npu:0`），默认为 `cpu`。设备不可用时 FunASR AutoModel 自动回退 CPU
 - **配置：** `use_itn=True`（逆文本正则化），`disable_update=True`
 - **后处理：** `rich_transcription_postprocess` 清理识别结果
 
@@ -170,6 +173,43 @@ PyQt5 QSystemTrayIcon 系统托盘图标。
 - `play_beep_stop()` — 两声 600Hz，各 100ms
 
 音频设备不可用时静默失败。
+
+### 8. Lock (`lock.py`)
+
+单实例进程锁，通过 PID 文件确保同一时间只有一个守护进程运行。
+
+- **锁文件：** `~/.cache/funasr-flow/daemon.pid`
+- `acquire()` — 检查锁文件中的 PID 是否存活，存活则拒绝启动返回 `False`，否则写入当前 PID 返回 `True`
+- `release()` — 退出时删除锁文件（仅删除自己写入的）
+- **死锁恢复：** 如果之前的进程异常退出（PID 已死），新进程自动覆盖锁文件
+- **集成点：** `cmd_daemon()` 启动时立即调用 `acquire()`，失败则打印错误并 `sys.exit(1)`
+
+### 9. Config (`config.py`)
+
+YAML 配置文件管理模块，遵循 XDG 规范。
+
+- **配置文件：** `~/.config/funasr-flow/config.yaml`
+- **数据类：** `Config(hotkey, transcriber_device)` 封装配置值
+- `load_config()` — 加载配置，不存在时自动生成默认文件
+- **容错策略：** YAML 解析失败 / key 缺失 / 值非法 → 使用默认值 + stderr warning，程序始终可启动
+
+**配置文件格式：**
+
+```yaml
+# FunASR Flow 配置文件
+hotkey: "<ctrl_r>"       # 全局热键，pynput 格式
+
+transcriber:
+  device: "cpu"          # cpu | cuda | cuda:0 | mps | npu:0
+```
+
+**配置优先级（仅配置文件，不支持 CLI 参数）：**
+
+```
+配置文件 > 硬编码默认值
+```
+
+修改配置后需重启守护进程生效。
 
 ## 系统依赖详解
 
@@ -221,6 +261,8 @@ tests/
 ├── test_injector.py     # X11 注入器、环境检测
 ├── test_notifier.py     # 提示音播放
 ├── test_cli.py          # CLI 命令、desktop 文件生成
+├── test_lock.py         # 单实例锁、PID 存活检测、死锁恢复
+├── test_config.py       # 配置文件加载、默认生成、容错降级
 └── test_integration.py  # 完整生命周期集成测试
 ```
 
