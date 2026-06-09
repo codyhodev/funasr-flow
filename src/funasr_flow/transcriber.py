@@ -20,6 +20,20 @@ def download_model(cache_dir: str = DEFAULT_CACHE_DIR) -> str:
     return snapshot_download(MODEL_ID, cache_dir=cache_dir)
 
 
+# FunASR rich_transcription_postprocess 会转换的情感/事件 emoji
+_FUNASR_EMOJIS = {
+    "😊", "😔", "😡", "😰", "🤢", "😮",  # emotion
+    "🎼", "👏", "😀", "😭", "🤧", "😷",  # event
+}
+
+
+def _strip_emojis(text: str) -> str:
+    """去除 FunASR 后处理引入的情感/事件 emoji。"""
+    for emoji in _FUNASR_EMOJIS:
+        text = text.replace(emoji, "")
+    return text
+
+
 def _model_dir_exists(model_dir: str) -> bool:
     p = Path(model_dir)
     return p.is_dir() and (p / "config.yaml").exists()
@@ -63,7 +77,9 @@ class Transcriber:
         if result and len(result) > 0:
             text = result[0].get("text", "")
             from funasr.utils.postprocess_utils import rich_transcription_postprocess
-            return rich_transcription_postprocess(text)
+            text = rich_transcription_postprocess(text)
+            text = _strip_emojis(text)
+            return text
         return ""
 
     @property

@@ -147,6 +147,94 @@ class TestTranscriberLoad:
         mock_funasr.AutoModel.assert_called_once()
 
 
+class TestTranscriberTranscribeEmojiStrip:
+    """验证 transcribe 会去除 rich_transcription_postprocess 引入的 emoji。
+
+    生产环境中 rich_transcription_postprocess 将情感/事件标签转为 emoji。
+    这里直接生成带 emoji 的文本来模拟其输出。
+    """
+
+    def test_strips_sad_emoji(self):
+        """😔（SAD）被去除。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "开始测试。😔"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert "😔" not in result
+        assert result == "开始测试。"
+
+    def test_strips_happy_emoji(self):
+        """😊（HAPPY）被去除。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "你好。😊"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert "😊" not in result
+        assert result == "你好。"
+
+    def test_strips_angry_emoji(self):
+        """😡（ANGRY）被去除。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "不行。😡"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert "😡" not in result
+
+    def test_strips_multiple_emojis(self):
+        """多个情感 emoji 全部去除。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "大家好。😊今天天气不错。😔"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert "😊" not in result
+        assert "😔" not in result
+        assert result == "大家好。今天天气不错。"
+
+    def test_strips_event_emojis(self):
+        """事件 emoji（鼓掌等）也被去除。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "谢谢大家。👏"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert "👏" not in result
+        assert result == "谢谢大家。"
+
+    def test_strips_all_funasr_emojis(self):
+        """FunASR 定义的所有 emotion/event emoji 全部去除。"""
+        all_emojis = "😊😔😡😰🤢😮🎼👏😀😭🤧😷"
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": f"测试{all_emojis}文本"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        for ch in all_emojis:
+            assert ch not in result, f"emoji {ch} 未被去除"
+        assert result == "测试文本"
+
+    def test_no_emoji_unchanged(self):
+        """无 emoji 的文本保持不变。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = [{"text": "今天天气真好"}]
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert result == "今天天气真好"
+
+    def test_empty_result(self):
+        """空结果不抛异常。"""
+        t = Transcriber()
+        for mock_funasr, mock_model in _seed_mock_funasr():
+            mock_model.generate.return_value = []
+            t.load_model()
+            result = t.transcribe("/tmp/test.wav")
+        assert result == ""
+
+
 class TestTranscriberTranscribe:
     def test_transcribe_returns_text(self):
         """transcribe 返回识别文本。"""
