@@ -74,7 +74,12 @@ class TestDaemon:
         mock_loop = MagicMock()
         mock_app = MagicMock()
 
-        with patch("funasr_flow.cli.signal.signal") as mock_signal, \
+        mock_config = MagicMock()
+        mock_config.hotkey = "<ctrl_r>"
+        mock_config.transcriber_device = "cpu"
+
+        with patch("funasr_flow.config.load_config", return_value=mock_config), \
+             patch("funasr_flow.cli.signal.signal") as mock_signal, \
              patch("PyQt5.QtWidgets.QApplication", return_value=mock_app), \
              patch("funasr_flow.loop.make_voice_input_loop", return_value=mock_loop), \
              patch("funasr_flow.tray.TrayIcon"):

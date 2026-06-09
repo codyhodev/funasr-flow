@@ -28,8 +28,9 @@ def _model_dir_exists(model_dir: str) -> bool:
 class Transcriber:
     """SenseVoice-Small 语音识别器。"""
 
-    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR):
+    def __init__(self, cache_dir: str = DEFAULT_CACHE_DIR, device: str = "cpu"):
         self._cache_dir = cache_dir
+        self._device = device
         self._model = None
 
     def _model_dir(self) -> str:
@@ -47,6 +48,7 @@ class Transcriber:
 
         self._model = AutoModel(
             model=model_path,
+            device=self._device,
             disable_update=True,
             disable_pbar=True,
             use_itn=True,

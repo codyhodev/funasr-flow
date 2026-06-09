@@ -84,7 +84,6 @@ class VoiceInputLoop:
 
     def start(self) -> None:
         """启动热键监听（非阻塞）。配合 Qt 等外部事件循环使用。"""
-        self._hotkey.grab_key(HOTKEY_SPEC)
         self._hotkey.start(self._on_hotkey)
 
     def stop(self) -> None:
@@ -101,6 +100,8 @@ class VoiceInputLoop:
 
 def make_voice_input_loop(
     *,
+    hotkey_spec: str = HOTKEY_SPEC,
+    device: str = "cpu",
     on_recording_start: Callable[[], None] | None = None,
     on_recording_stop: Callable[[], None] | None = None,
     on_state_change: Callable[[State], None] | None = None,
@@ -112,11 +113,14 @@ def make_voice_input_loop(
     from funasr_flow.recorder import Recorder
     from funasr_flow.transcriber import Transcriber
 
-    transcriber = Transcriber()
+    transcriber = Transcriber(device=device)
     transcriber.load_model()
 
+    hotkey = HotkeyListener()
+    hotkey.grab_key(hotkey_spec)
+
     return VoiceInputLoop(
-        hotkey=HotkeyListener(),
+        hotkey=hotkey,
         recorder=Recorder(),
         transcriber=transcriber,
         injector=injector or _default_injector,

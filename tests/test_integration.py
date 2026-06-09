@@ -123,10 +123,8 @@ class TestFullLifecycle:
         assert lo.state == State.RECORDING
 
     def test_start_method_wiring(self, mocks):
-        """start 方法正确连接 hotkey 参数。"""
+        """start 方法正确连接 hotkey（grab_key 由工厂函数在构造前完成）。"""
         lo = mocks["loop"]
         lo.start()
 
-        from funasr_flow.loop import HOTKEY_SPEC
-        mocks["hotkey"].grab_key.assert_called_once_with(HOTKEY_SPEC)
         mocks["hotkey"].start.assert_called_once_with(lo._on_hotkey)

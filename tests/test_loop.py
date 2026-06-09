@@ -57,12 +57,10 @@ class TestVoiceInputLoop:
         inj.assert_called_once_with("今天天气真好")
 
     def test_start_registers_hotkey(self):
-        """start 调用 grab_key + hotkey.start（非阻塞）。"""
-        from funasr_flow.loop import HOTKEY_SPEC
+        """start 调用 hotkey.start（非阻塞），grab_key 在构造前完成。"""
         lo, hotkey, rec, tc, inj = self._make_loop()
         lo.start()
 
-        hotkey.grab_key.assert_called_once_with(HOTKEY_SPEC)
         hotkey.start.assert_called_once_with(lo._on_hotkey)
         hotkey._listener.join.assert_not_called()
 

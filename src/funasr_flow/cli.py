@@ -61,6 +61,10 @@ def cmd_daemon() -> None:
         print("funasr-flow 已在运行中，不允许重复启动。", file=sys.stderr)
         sys.exit(1)
 
+    from funasr_flow.config import load_config
+
+    config = load_config()
+
     from PyQt5.QtWidgets import QApplication
 
     from funasr_flow.loop import make_voice_input_loop
@@ -72,6 +76,8 @@ def cmd_daemon() -> None:
     app.setQuitOnLastWindowClosed(False)
 
     loop = make_voice_input_loop(
+        hotkey_spec=config.hotkey,
+        device=config.transcriber_device,
         on_recording_start=play_beep_start,
         on_recording_stop=play_beep_stop,
         on_state_change=lambda s: (
