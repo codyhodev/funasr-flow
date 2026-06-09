@@ -55,6 +55,12 @@ def cmd_uninstall() -> None:
 
 def cmd_daemon() -> None:
     """前台运行守护进程，由桌面 autostart 管理生命周期。"""
+    from funasr_flow.lock import acquire, release
+
+    if not acquire():
+        print("funasr-flow 已在运行中，不允许重复启动。", file=sys.stderr)
+        sys.exit(1)
+
     from PyQt5.QtWidgets import QApplication
 
     from funasr_flow.loop import make_voice_input_loop
@@ -85,6 +91,7 @@ def cmd_daemon() -> None:
         loop.stop()
         tray.stop()
         app.quit()
+        release()
 
     def _handle_sigterm(signum, frame):
         _do_quit()
