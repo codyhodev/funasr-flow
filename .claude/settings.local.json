@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python3 -m ensurepip)",
+      "Bash(python3 -m pip install uv -i https://mirrors.aliyun.com/pypi/simple/)",
+      "Bash(apt list *)",
+      "Bash(curl -sS https://bootstrap.pypa.io/get-pip.py)",
+      "Bash(python3)",
+      "Bash(curl -LsSf https://astral.sh/uv/install.sh)",
+      "Bash(sh)",
+      "Bash(kill 11311)",
+      "Bash(python *)"
+    ]
+  }
+}
